@@ -28,18 +28,16 @@ MAX_ACTIVITY_LEVEL = 10
 MIN_ACTIVITY_LEVEL = -10
 
 class PatersonsWormsSimulation:
-    def __init__(self, grid_size, num_worms):
+    def __init__(self, grid_size=250, num_worms=5, frame_rate=30):
         self.grid_size = grid_size
         self.num_worms = num_worms
+        self.frame_rate = frame_rate
         
         # Initialise the grid with all cells as alive (1) to start with
         self.grid = [[1 for _ in range(grid_size)] for _ in range(grid_size)]
         
         # Initialise the activity array to track the activity level for each cell
         self.activity = [[0 for _ in range(grid_size)] for _ in range(grid_size)]
-        
-        # # Initialise the grid with randomly to start with
-        # self.grid = [[random.choice([0, 1]) for _ in range(grid_size)] for _ in range(grid_size)]
         
         # Set initial worm positions to be in the center of the grid
         center_row, center_col = grid_size // 2, grid_size // 2
@@ -49,8 +47,8 @@ class PatersonsWormsSimulation:
     def initialise_screen(self):
         # Calculate window size based on screen resolution
         screen_info = pygame.display.Info()
-        cell_size = min(screen_info.current_w // grid_size, int(0.8 * screen_info.current_h // grid_size))
-        self.window_size = (grid_size * cell_size, grid_size * cell_size)
+        cell_size = min(screen_info.current_w // self.grid_size, int(0.8 * screen_info.current_h // self.grid_size))
+        self.window_size = (self.grid_size * cell_size, self.grid_size * cell_size)
         self.cell_size = cell_size
 
 
@@ -104,13 +102,6 @@ class PatersonsWormsSimulation:
                 if (col, row) in self.worms:
                     color = pygame.Color("green") 
                 else:
-                    # # Check cell state and set color accordingly
-                    # if self.grid[row][col] == 0:
-                    #     color = pygame.Color("black")
-                    
-                    # else:
-                    #     color = pygame.Color("white")
-                    
                     # Determine the color based on the cell stand and activity level
                     cell_state = self.grid[row][col]
                     activity_level = self.activity[row][col]
@@ -121,9 +112,6 @@ class PatersonsWormsSimulation:
                             color = self.interpolate_color(activity_level / MIN_ACTIVITY_LEVEL)
                         else: # Dead to Alive (hot colors)
                             color = self.interpolate_color(activity_level / MAX_ACTIVITY_LEVEL)
-                    
-                    # color_index = min(activity_level, len(HEATMAP_COLORS) - 1)
-                    # color = HEATMAP_COLORS[color_index]
                 
                 # Draw the cell
                 pygame.draw.rect(window, color, (col * cell_size, row * cell_size, cell_size, cell_size))
@@ -149,10 +137,3 @@ class PatersonsWormsSimulation:
             clock.tick(60) # Limit the frame rate to 60 fps
         # Quit the game
         pygame.quit()
-
-
-# Example usage:
-grid_size = 250
-num_worms = 5
-simulation = PatersonsWormsSimulation(grid_size, num_worms)
-simulation.run_simulation()
