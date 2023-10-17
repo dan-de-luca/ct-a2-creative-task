@@ -28,7 +28,7 @@ MAX_ACTIVITY_LEVEL = 10
 MIN_ACTIVITY_LEVEL = -10
 
 class PatersonsWormsSimulation:
-    def __init__(self, grid_size=250, num_worms=5, frame_rate=30):
+    def __init__(self, grid_size=200, num_worms=5, frame_rate=30):
         self.grid_size = grid_size
         self.num_worms = num_worms
         self.frame_rate = frame_rate
@@ -47,7 +47,8 @@ class PatersonsWormsSimulation:
     def initialise_screen(self):
         # Calculate window size based on screen resolution
         screen_info = pygame.display.Info()
-        cell_size = min(screen_info.current_w // self.grid_size, int(0.8 * screen_info.current_h // self.grid_size))
+        cell_size = min(screen_info.current_w // self.grid_size, int(screen_info.current_h // self.grid_size))
+        # cell_size = min(screen_info.current_w // self.grid_size, int(0.8 * screen_info.current_h // self.grid_size))
         self.window_size = (self.grid_size * cell_size, self.grid_size * cell_size)
         self.cell_size = cell_size
 
@@ -134,6 +135,6 @@ class PatersonsWormsSimulation:
             window.fill(pygame.Color("black"))
             self.display_grid(window, self.cell_size)
             pygame.display.flip() # Update the display
-            clock.tick(60) # Limit the frame rate to 60 fps
+            clock.tick(self.frame_rate)
         # Quit the game
         pygame.quit()

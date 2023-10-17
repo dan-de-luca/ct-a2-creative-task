@@ -1,7 +1,7 @@
 import pygame
 
 # Constant for worm image
-WORM_IMAGE = "assets/worm-2.png"
+WORM_IMAGE = "assets/worm.png"
 
 # Constants for directions
 UP = "UP"

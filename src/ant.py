@@ -1,7 +1,7 @@
 import pygame
 
 # Constant for ant image
-ANT_IMAGE = "assets/ant-2.png"
+ANT_IMAGE = "assets/ant.png"
 
 # Constants for directions
 UP = "UP"
