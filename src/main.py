@@ -4,7 +4,6 @@ import pygame as pg
 
 # Import classes
 from button import Button
-from dropdown import Dropdown
 from patersons_worms_simulator import PatersonsWormsSimulation
 
 pg.init()
