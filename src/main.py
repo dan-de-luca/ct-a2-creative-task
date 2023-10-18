@@ -307,7 +307,7 @@ def main():
     # Initialise Simulation Defaults
     frame_rate = 60
     grid_size = 200
-    triangular_pattern = True
+    triangle_pattern = True
     track_recent = True
     num_track = 10
     num_worms = 5
@@ -430,11 +430,11 @@ def main():
             elif menu_state == "options-pattern":
                 if triangle_pattern_button.draw():
                     if DEBUG: print("1 worm button pressed!")
-                    triangular_pattern = True
+                    triangle_pattern = True
                 
                 elif square_pattern_button.draw():
                     if DEBUG: print("3 worms button pressed!")
-                    triangular_pattern = False
+                    triangle_pattern = False
                 
                 elif back_button.draw():
                     if DEBUG: print("Back button pressed!")
