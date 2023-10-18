@@ -69,14 +69,19 @@ class PatersonsWormsSimulation:
         
         # Get the next position of the worm
         if self.track:
-            # Get the next position, avoiding recently visited cells
+            # Get the next position
             next_position = random.choice(self.next_position_options)
             next_col = col + next_position[0]
             next_row = row + next_position[1]
+            
+            # Check if the new position is in the last visited list
             while (next_col, next_row) in self.last_visited:
                 next_position = random.choice(self.next_position_options)
                 next_col = col + next_position[0]
                 next_row = row + next_position[1]
+            
+            # Update the last visited list
+            self.update_last_visited((next_col, next_row))
         else:
             # Get the next position regardless of recently visited cells
             next_position = random.choice(self.next_position_options)
@@ -119,21 +124,36 @@ class PatersonsWormsSimulation:
             if DEBUG: print("After toggle - Grid at ({}, {}) = {}".format(col, row, self.grid[row][col]))
             
             # Move the worm randomly in one of the neighboring cells (including diagonals)
-            row += random.choice([-1, 0, 1])
-            col += random.choice([-1, 0, 1])
+            new_row = row + random.choice([-1, 0, 1])
+            new_col = col + random.choice([-1, 0, 1])
+            
+            if self.track:
+                # Move the worm randomly in one of the neighboring cells (including diagonals)
+                new_row = row + random.choice([-1, 0, 1])
+                new_col = col + random.choice([-1, 0, 1])
+                
+                # Check if the new position is in the last visited list
+                while (new_col, new_row) in self.last_visited:
+                    new_row = row + random.choice([-1, 0, 1])
+                    new_col = col + random.choice([-1, 0, 1])
+                
+                # Update the last visited list
+                self.update_last_visited((new_col, new_row))
+            else:
+                # Move the worm randomly in one of the neighboring cells (including diagonals)
+                new_row = row + random.choice([-1, 0, 1])
+                new_col = col + random.choice([-1, 0, 1])
             
             # Ensure the worm stays within the grid boundaries
-            row = max(0, min(row, self.grid_size - 1))
-            col = max(0, min(col, self.grid_size - 1))
+            new_row = max(0, min(new_row, self.grid_size - 1))
+            new_col = max(0, min(new_col, self.grid_size - 1))
             
             # Add the new worm position to the list
             new_worms.append((col, row))
             
-            if self.track:
-                # Update the last visited list
-                self.update_last_visited((col, row))
-            
         if DEBUG: print("Updated worm positions: {}".format(new_worms))
+        
+        # Update the worm positions
         self.worms = new_worms
         
         
@@ -167,11 +187,9 @@ class PatersonsWormsSimulation:
             # Add the new worm position to the list
             new_worms.append((col, row))
             
-            if self.track:
-                # Update the last visited list
-                self.update_last_visited((col, row))
-            
         if DEBUG: print("Updated worm positions: {}".format(new_worms))
+        
+        # Update the worm positions
         self.worms = new_worms
     
     
