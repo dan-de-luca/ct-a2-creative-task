@@ -16,7 +16,8 @@ class Worm:
         self.cell_size = cell_size
         self.image = pygame.image.load(WORM_IMAGE)
         self.image = pygame.transform.scale(self.image, (cell_size, cell_size))
-
+    
+    
     def move(self, direction, step_size, grid_size):
         if direction == UP:
             self.y = max(self.y - step_size, 0)
@@ -26,6 +27,7 @@ class Worm:
             self.x = max(self.x - step_size, 0)
         elif direction == RIGHT:
             self.x = min(self.x + step_size, grid_size - 1)
+    
 
     def draw(self, window):
         window.blit(self.image, (self.x * self.cell_size, self.y * self.cell_size))

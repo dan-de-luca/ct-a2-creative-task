@@ -258,10 +258,13 @@ def main():
     worm_button_2 = Button(menu, worm_p_1, worm_2, "worm_2")
     
     
-    # Initialise simulation (default values)
-    num_worms = 5
+    # Initialise Simulation Defaults
     frame_rate = 60
     grid_size = 200
+    movement_pattern_triangular = True
+    track_recent = True
+    num_recent = 10
+    num_worms = 5
 
     running = True
     while running:
@@ -313,6 +316,14 @@ def main():
                 
                 elif worm_button_2.draw():
                     print("Paterson's Worm Says Hi!")
+                # TODO: Add movement pattern button
+                # elif worms_button.draw():
+                #     print("Worms button pressed!")
+                #     menu_state = "options-worms"
+                # TODO: Add Track Recent button
+                # elif worm_button_2.draw():
+                #     print("Paterson's Worm Says Hi!")
+                
             
             # FPS Options Buttons
             elif menu_state == "options-fps":
@@ -367,6 +378,56 @@ def main():
                 
                 elif worm_button_2.draw():
                     print("Paterson's Worm Says Hi!")
+            # TODO: Add Movement Pattern Options
+            # # Worms Options Buttons
+            # elif menu_state == "options-worms":
+            #     if worms_1_button.draw():
+            #         print("1 worm button pressed!")
+            #         num_worms = 1
+                
+            #     elif worms_3_button.draw():
+            #         print("3 worms button pressed!")
+            #         num_worms = 3
+                
+            #     elif worms_5_button.draw():
+            #         print("5 worms button pressed!")
+            #         num_worms = 5
+                
+            #     elif worms_10_button.draw():
+            #         print("10 worms button pressed!")
+            #         num_worms = 10
+                
+            #     elif back_button.draw():
+            #         print("Back button pressed!")
+            #         menu_state = "sub"
+                
+            #     elif worm_button_2.draw():
+            #         print("Paterson's Worm Says Hi!")
+            # TODO: Add Track Options Buttons
+            # # Worms Options Buttons
+            # elif menu_state == "options-worms":
+            #     if worms_1_button.draw():
+            #         print("1 worm button pressed!")
+            #         num_worms = 1
+                
+            #     elif worms_3_button.draw():
+            #         print("3 worms button pressed!")
+            #         num_worms = 3
+                
+            #     elif worms_5_button.draw():
+            #         print("5 worms button pressed!")
+            #         num_worms = 5
+                
+            #     elif worms_10_button.draw():
+            #         print("10 worms button pressed!")
+            #         num_worms = 10
+                
+            #     elif back_button.draw():
+            #         print("Back button pressed!")
+            #         menu_state = "sub"
+                
+            #     elif worm_button_2.draw():
+            #         print("Paterson's Worm Says Hi!")
             
             # Worms Options Buttons
             elif menu_state == "options-worms":
