@@ -23,9 +23,9 @@ COLD_COLOR_GRADIENT = [
 ]
 
 # Define heatmap gradient colors
-DEAD_COLOR = pygame.Color("#0000FF") # Blue
-ALIVE_COLOR = pygame.Color("#FF0000") # Red
-INTERACTION_COLOR = pygame.Color("#800080") # Purple
+DEAD_COLOR = pygame.Color("#0000FF")            # Blue
+ALIVE_COLOR = pygame.Color("#FF0000")           # Red
+INTERACTION_COLOR = pygame.Color("#800080")     # Purple
 MAX_ACTIVITY_LEVEL = 10
 MIN_ACTIVITY_LEVEL = -10
 
@@ -35,8 +35,8 @@ class PatersonsWormsSimulation:
         self.num_worms = num_worms      # Number of worms to simulate
         self.frame_rate = frame_rate    # Number of frames per second to run the simulation at
         self.triangular = triangular    # Whether or not to move the worms in a triangular pattern or standard pattern
-        self.track = track             # Whether or not to keep track of recently visited cells
-        self.track_num = track_num    # Number of recently visited cells to keep track of
+        self.track = track              # Whether or not to keep track of recently visited cells
+        self.track_num = track_num      # Number of recently visited cells to keep track of
         
         # Initialise the grid with all cells as alive (1) to start with
         self.grid = [[1 for _ in range(grid_size)] for _ in range(grid_size)]
@@ -51,8 +51,8 @@ class PatersonsWormsSimulation:
         self.worms = [(center_row, center_col) for _ in range(num_worms)]
         
         # Next position options
-        self.next_position_options_square_pattern = [(-1, 0), (1, 1), (-1, -1), (-1, 1), (1, -1), (1, 0), (0, -1), (0, 1)]  # Up, Down, Left, Right
-        self.next_position_options_triangle_pattern = [(-2, 0), (2, 0), (-1, 1), (1, 1), (-1, -1), (1, -1)]  # Up-Left, Down-Left, Left-Left, Right-Right, Up-Right, Down-Right
+        self.next_position_options_square_pattern = [(-1, 0), (1, 1), (-1, -1), (-1, 1), (1, -1), (1, 0), (0, -1), (0, 1)]      # Left, Up-Right, Down-Left, Up-Left, Down-Right, Right, Up, Down
+        self.next_position_options_triangle_pattern = [(-2, 0), (2, 0), (-1, 1), (1, 1), (-1, -1), (1, -1)]                     # Up-Left, Down-Left, Left-Left, Right-Right, Up-Right, Down-Right
         
         # Track of recently visited cells
         self.last_visited = []
@@ -69,7 +69,6 @@ class PatersonsWormsSimulation:
     def get_next_pos_triangle(self, worm):
         # Get the current position of the worm
         row, col = worm
-        # col, row = worm
         
         # Get the next position of the worm
         if self.track:
@@ -104,7 +103,6 @@ class PatersonsWormsSimulation:
     def get_next_pos_square(self, worm):
         # Get the current position of the worm
         row, col = worm
-        # col, row = worm
         
         # Get the next position of the worm
         if self.track:
@@ -157,7 +155,6 @@ class PatersonsWormsSimulation:
         new_worms = []
         for worm in self.worms:
             row, col = worm
-            # col, row = worm
             
             # Toggle cell state and update cell activity level
             self.grid[row][col] = 1 - self.grid[row][col]
@@ -192,7 +189,6 @@ class PatersonsWormsSimulation:
         new_worms = []
         for worm in self.worms:
             row, col = worm
-            # col, row = worm
             
             # Toggle cell state and update cell activity level
             self.grid[row][col] = 1 - self.grid[row][col]

@@ -56,15 +56,6 @@ class Menu:
         self.text += text
 
 
-# def display_menu(window, buttons, dropdowns):
-#     window.fill(PASTEL_BLUE)
-#     for button in buttons:
-#         button.draw()
-#     for dropdown in dropdowns:
-#         dropdown.draw()
-#     pg.display.flip()
-
-
 def draw_text(window, text, color, position):
     """
     Render the given text to the menu screen
@@ -181,15 +172,8 @@ def main():
     
     # X Positions:
     center_x = menu.screen_height // 2
-    # center_y = menu.screen_height // 2
     main_button_mid_x = (center_x - (menu.button_width_main // 2))
-    # option_button_s_mid_x = (center_x - (menu.button_width_options_s // 2))
     option_button_d_mid_x = (center_x - (menu.button_width_options_d // 2))
-    # option_button_t_mid_x = (center_x - (menu.button_width_options_t // 2))
-    
-    # Y Positions:
-    # main_button_mid_y = (center_y - (menu.button_height_main // 2))
-    # option_button_mid_y = (center_y - (menu.button_height_options_s // 2))
     
     # Main Button Positions:
     pos_1 = (main_button_mid_x, (main_button_mid_x - main_button_mid_x * 0.4))                  # Top-Center
@@ -252,7 +236,7 @@ def main():
 
     # Worm Position
     worm_x = ((menu.screen_height // 2) - (menu.worm_height_2 // 2))
-    worm_p_1 = (worm_x, (worm_x - worm_x * 0.8))                                                                    # Center-Right
+    worm_p_1 = (worm_x, (worm_x - worm_x * 0.8))
     
     # Create Button Instances
     # Main Menu Buttons:
@@ -501,6 +485,7 @@ def main():
                     print("Paterson's Worm Says Hi!")
                 
                 else:
+                    # Display text on screen
                     draw_text(menu.menu_window, menu.text, BLACK, (menu.screen_height // 2, menu.screen_height // 2))
         
         # Event handler
@@ -523,4 +508,4 @@ def main():
     sys.exit()
 
 if __name__ == "__main__":
-    main() # Calling main function
+    main()
