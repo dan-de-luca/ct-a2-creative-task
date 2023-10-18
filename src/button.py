@@ -1,10 +1,5 @@
 import pygame
 
-# FONT = pygame.font.Font(None, 20)
-# WHITE = pygame.Color("#FFFFFF")
-# GRAY = pygame.Color("#CCCCCC")
-# BLACK = pygame.Color("#000000")
-
 class Button:
     def __init__(self, menu, position, image, text=None):
         # Attributes
