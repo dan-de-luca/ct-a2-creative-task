@@ -1,6 +1,8 @@
 import pygame
 import random
 
+# Constants:
+# Debugging flag
 DEBUG = False
 
 # Define heatmap colors
@@ -65,40 +67,43 @@ class PatersonsWormsSimulation:
     
     def get_next_pos(self, worm):
         # Get the current position of the worm
-        col, row = worm
+        row, col = worm
+        # col, row = worm
         
         # Get the next position of the worm
         if self.track:
             # Get the next position
             next_position = random.choice(self.next_position_options)
-            next_col = col + next_position[0]
-            next_row = row + next_position[1]
+            next_row = row + next_position[0]
+            next_col = col + next_position[1]
             
             # Check if the new position is in the last visited list
-            while (next_col, next_row) in self.last_visited:
+            while (next_row, next_col) in self.last_visited:
+                if DEBUG: print("Position taken. Finding new position...")
                 next_position = random.choice(self.next_position_options)
-                next_col = col + next_position[0]
-                next_row = row + next_position[1]
+                next_row = row + next_position[0]
+                next_col = col + next_position[1]
+            if DEBUG: print("Position found: ({}, {})".format(next_col, next_row))
             
             # Update the last visited list
             self.update_last_visited((next_col, next_row))
         else:
             # Get the next position regardless of recently visited cells
             next_position = random.choice(self.next_position_options)
-            next_col = col + next_position[0]
-            next_row = row + next_position[1]
+            next_row = row + next_position[0]
+            next_col = col + next_position[1]
         
         # Ensure the worm stays within the grid boundaries
         next_row = max(0, min(next_row, self.grid_size - 1))
         next_col = max(0, min(next_col, self.grid_size - 1))
         
-        return (next_col, next_row)
+        return (next_row, next_col)
     
         
     def update_last_visited(self, worm):
         # Update the last visited list
-        col, row = worm
-        self.last_visited.append((col, row))
+        row, col = worm
+        self.last_visited.append((row, col))
         
         # track the last visited list
         if len(self.last_visited) > self.num_worms * self.track_num: self.last_visited.pop(-1)
@@ -115,17 +120,12 @@ class PatersonsWormsSimulation:
         """
         new_worms = []
         for worm in self.worms:
-            col, row = worm
+            row, col = worm
+            # col, row = worm
             
             # Toggle cell state and update cell activity level
-            if DEBUG: print("Before toggle - Grid at ({}, {}) = {}".format(col, row, self.grid[row][col]))
             self.grid[row][col] = 1 - self.grid[row][col]
             self.activity[row][col] += 1
-            if DEBUG: print("After toggle - Grid at ({}, {}) = {}".format(col, row, self.grid[row][col]))
-            
-            # Move the worm randomly in one of the neighboring cells (including diagonals)
-            new_row = row + random.choice([-1, 0, 1])
-            new_col = col + random.choice([-1, 0, 1])
             
             if self.track:
                 # Move the worm randomly in one of the neighboring cells (including diagonals)
@@ -133,12 +133,14 @@ class PatersonsWormsSimulation:
                 new_col = col + random.choice([-1, 0, 1])
                 
                 # Check if the new position is in the last visited list
-                while (new_col, new_row) in self.last_visited:
+                while (new_row, new_col) in self.last_visited:
+                    if DEBUG: print("Position taken. Finding new position...")
                     new_row = row + random.choice([-1, 0, 1])
                     new_col = col + random.choice([-1, 0, 1])
+                if DEBUG: print("Position found: ({}, {})".format(new_row, new_col))
                 
                 # Update the last visited list
-                self.update_last_visited((new_col, new_row))
+                self.update_last_visited((new_row, new_col))
             else:
                 # Move the worm randomly in one of the neighboring cells (including diagonals)
                 new_row = row + random.choice([-1, 0, 1])
@@ -149,7 +151,7 @@ class PatersonsWormsSimulation:
             new_col = max(0, min(new_col, self.grid_size - 1))
             
             # Add the new worm position to the list
-            new_worms.append((col, row))
+            new_worms.append((row, col))
             
         if DEBUG: print("Updated worm positions: {}".format(new_worms))
         
@@ -172,20 +174,19 @@ class PatersonsWormsSimulation:
         """
         new_worms = []
         for worm in self.worms:
-            col, row = worm
+            row, col = worm
+            # col, row = worm
             
             # Toggle cell state and update cell activity level
-            if DEBUG: print("Before toggle - Grid at ({}, {}) = {}".format(col, row, self.grid[row][col]))
             self.grid[row][col] = 1 - self.grid[row][col]
             self.activity[row][col] += 1
-            if DEBUG: print("After toggle - Grid at ({}, {}) = {}".format(col, row, self.grid[row][col]))
             
             # Get the next position of the worm
             next_pos = self.get_next_pos(worm)
             row, col = next_pos
             
             # Add the new worm position to the list
-            new_worms.append((col, row))
+            new_worms.append((row, col))
             
         if DEBUG: print("Updated worm positions: {}".format(new_worms))
         
@@ -221,7 +222,7 @@ class PatersonsWormsSimulation:
         for row in range(self.grid_size):
             for col in range(self.grid_size):
                 # Check if the cell is occupied by a worm
-                if (col, row) in self.worms:
+                if (row, col) in self.worms:
                     color = pygame.Color("green") 
                 else:
                     # Determine the cell color based on the cell state (1 or 0) and activity level (-10 to 10)
