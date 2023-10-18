@@ -51,7 +51,8 @@ class PatersonsWormsSimulation:
         self.worms = [(center_row, center_col) for _ in range(num_worms)]
         
         # Next position options
-        self.next_position_options = [(-2, 0), (2, 0), (-1, 1), (1, 1), (-1, -1), (1, -1)]  # Up-Left, Down-Left, Left-Left, Right-Right, Up-Right, Down-Right
+        self.next_position_options_square_pattern = [(-1, 0), (1, 1), (-1, -1), (-1, 1), (1, -1), (1, 0), (0, -1), (0, 1)]  # Up, Down, Left, Right
+        self.next_position_options_triangle_pattern = [(-2, 0), (2, 0), (-1, 1), (1, 1), (-1, -1), (1, -1)]  # Up-Left, Down-Left, Left-Left, Right-Right, Up-Right, Down-Right
         
         # Track of recently visited cells
         self.last_visited = []
@@ -65,7 +66,7 @@ class PatersonsWormsSimulation:
         self.cell_size = cell_size
         
     
-    def get_next_pos(self, worm):
+    def get_next_pos_triangle(self, worm):
         # Get the current position of the worm
         row, col = worm
         # col, row = worm
@@ -73,14 +74,14 @@ class PatersonsWormsSimulation:
         # Get the next position of the worm
         if self.track:
             # Get the next position
-            next_position = random.choice(self.next_position_options)
+            next_position = random.choice(self.next_position_options_triangle_pattern)
             next_row = row + next_position[0]
             next_col = col + next_position[1]
             
             # Check if the new position is in the last visited list
             while (next_row, next_col) in self.last_visited:
                 if DEBUG: print("Position taken. Finding new position...")
-                next_position = random.choice(self.next_position_options)
+                next_position = random.choice(self.next_position_options_triangle_pattern)
                 next_row = row + next_position[0]
                 next_col = col + next_position[1]
             if DEBUG: print("Position found: ({}, {})".format(next_col, next_row))
@@ -89,7 +90,42 @@ class PatersonsWormsSimulation:
             self.update_last_visited((next_col, next_row))
         else:
             # Get the next position regardless of recently visited cells
-            next_position = random.choice(self.next_position_options)
+            next_position = random.choice(self.next_position_options_triangle_pattern)
+            next_row = row + next_position[0]
+            next_col = col + next_position[1]
+        
+        # Ensure the worm stays within the grid boundaries
+        next_row = max(0, min(next_row, self.grid_size - 1))
+        next_col = max(0, min(next_col, self.grid_size - 1))
+        
+        return (next_row, next_col)
+        
+    
+    def get_next_pos_square(self, worm):
+        # Get the current position of the worm
+        row, col = worm
+        # col, row = worm
+        
+        # Get the next position of the worm
+        if self.track:
+            # Get the next position
+            next_position = random.choice(self.next_position_options_square_pattern)
+            next_row = row + next_position[0]
+            next_col = col + next_position[1]
+            
+            # Check if the new position is in the last visited list
+            while (next_row, next_col) in self.last_visited:
+                if DEBUG: print("Position taken. Finding new position...")
+                next_position = random.choice(self.next_position_options_square_pattern)
+                next_row = row + next_position[0]
+                next_col = col + next_position[1]
+            if DEBUG: print("Position found: ({}, {})".format(next_col, next_row))
+            
+            # Update the last visited list
+            self.update_last_visited((next_col, next_row))
+        else:
+            # Get the next position regardless of recently visited cells
+            next_position = random.choice(self.next_position_options_square_pattern)
             next_row = row + next_position[0]
             next_col = col + next_position[1]
         
@@ -109,7 +145,7 @@ class PatersonsWormsSimulation:
         if len(self.last_visited) > self.num_worms * self.track_num: self.last_visited.pop(-1)
 
 
-    def move_worms(self):
+    def move_worms_square(self):
         """
         If the triangular flag is set to False, the worms will move in a standard pattern. This means that the worms will
         move in a standard pattern, randomly moving up, down, left, right, or diagonally.
@@ -127,28 +163,9 @@ class PatersonsWormsSimulation:
             self.grid[row][col] = 1 - self.grid[row][col]
             self.activity[row][col] += 1
             
-            if self.track:
-                # Move the worm randomly in one of the neighboring cells (including diagonals)
-                new_row = row + random.choice([-1, 0, 1])
-                new_col = col + random.choice([-1, 0, 1])
-                
-                # Check if the new position is in the last visited list
-                while (new_row, new_col) in self.last_visited:
-                    if DEBUG: print("Position taken. Finding new position...")
-                    new_row = row + random.choice([-1, 0, 1])
-                    new_col = col + random.choice([-1, 0, 1])
-                if DEBUG: print("Position found: ({}, {})".format(new_row, new_col))
-                
-                # Update the last visited list
-                self.update_last_visited((new_row, new_col))
-            else:
-                # Move the worm randomly in one of the neighboring cells (including diagonals)
-                new_row = row + random.choice([-1, 0, 1])
-                new_col = col + random.choice([-1, 0, 1])
-            
-            # Ensure the worm stays within the grid boundaries
-            new_row = max(0, min(new_row, self.grid_size - 1))
-            new_col = max(0, min(new_col, self.grid_size - 1))
+            # Get the next position of the worm
+            next_pos = self.get_next_pos_square(worm)
+            row, col = next_pos
             
             # Add the new worm position to the list
             new_worms.append((row, col))
@@ -159,7 +176,7 @@ class PatersonsWormsSimulation:
         self.worms = new_worms
         
         
-    def move_worms_triangular(self):
+    def move_worms_triangle(self):
         """
         If the triangular flag is set to True, the worms will move in a triangular pattern. This means that the worms will
         move randomly in a triangular pattern, by randomly selecting a position from the next_position_options list. This 
@@ -182,7 +199,7 @@ class PatersonsWormsSimulation:
             self.activity[row][col] += 1
             
             # Get the next position of the worm
-            next_pos = self.get_next_pos(worm)
+            next_pos = self.get_next_pos_triangle(worm)
             row, col = next_pos
             
             # Add the new worm position to the list
@@ -259,8 +276,8 @@ class PatersonsWormsSimulation:
                     running = False
             
             # Move the worms
-            if self.triangular: self.move_worms_triangular()
-            else: self.move_worms()
+            if self.triangular: self.move_worms_triangle()
+            else: self.move_worms_square()
             
             # Draw the grid
             window.fill(pygame.Color("black"))
