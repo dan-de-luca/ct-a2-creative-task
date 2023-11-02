@@ -1,5 +1,7 @@
 import sys
+import os
 import pygame as pg
+from functools import partial
 # import pygame_menu as pm
 
 # Import classes
@@ -10,165 +12,204 @@ pg.init()
 
 # Constants
 DEBUG = False
-FONT = pg.font.SysFont("arialblack", 30)
+HEADING_FONT_SIZE = 30
+NORMAL_FONT_SIZE = 20
+HEADING_FONT = pg.font.SysFont("arialblack", HEADING_FONT_SIZE)
+NORMAL_FONT = pg.font.SysFont("arialblack", NORMAL_FONT_SIZE)
 WHITE = pg.Color("#FFFFFF")
 GRAY = pg.Color("#CCCCCC")
 BLACK = pg.Color("#000000")
 PASTEL_BLUE = pg.Color("#B2DCEF")
+DARK_BLUE = pg.Color("#0000A0")
 
 
+#######################################################################################################################
 class Menu:
     """
     Menu class to store menu attributes
     """
     def __init__(self):
-        # Menu attributes
+        # Menu Attributes
         self.screen_info = pg.display.Info()
         self.screen_height = int(self.screen_info.current_h * 0.75)
         self.menu_window = pg.display.set_mode((self.screen_height, self.screen_height))
+        self.window_center = (self.screen_height // 2, self.screen_height // 2)
         self.frame_rate = 60 # Default frame rate
-        self.text = "About Paterson's Worms"
+        self.about_text_file_path = os.path.join('assets', 'about.txt')
+        self.about_text = self.load_text()
+        # self.about_text_length = len(self.about_text)
+        # self.about_text_box_max_y = self.window_center[1] // 2
+        # self.about_text_box_min_y = self.about_text_box_max_y + self.window_center[1]
+        
+        # Add any additional attributes here
         
         # Dynamic Button Sizes:
-        # Main Menu Buttons
+        # Main Menu Button Size
         self.button_width_main = int(0.24 * self.screen_height)
         self.button_height_main = int(0.06 * self.screen_height)
         # Options Buttons
-        # Single Digit
+        # Single Digit Button Size
         self.button_width_options_s = int(0.06 * self.screen_height)
         self.button_height_options_s = int(0.06 * self.screen_height)
-        # Double Digit
+        # Double Digit Button Size
         self.button_width_options_d = int(0.07 * self.screen_height)
         self.button_height_options_d = int(0.06 * self.screen_height)
-        # Triple Digit
+        # Triple Digit Button Size
         self.button_width_options_t = int(0.08 * self.screen_height)
         self.button_height_options_t = int(0.06 * self.screen_height)
-        # Worm Buttons
+        # Worm Button Sizes (worm images - 2 versions)
         self.worm_height_1 = int(0.45 * self.screen_height)
         self.worm_width_1 = int(0.15 * self.screen_height)
         self.worm_height_2 = int(0.2 * self.screen_height)
         self.worm_width_2 = int(0.05 * self.screen_height)
     
-    def set_text(self, text):
-        self.text = text
+    # def get_about_text_height(self):
+    #     return sum(item[1].get_height() + 10 for item in self.about_text)
+
+    def draw_text(self, y_position, scroll_y):
+        """
+        Render the given text to the menu screen with scrolling
+        """
+        # Calculate total text height
+        scroll_box_height = self.screen_height // 2
+        total_text_height = len(self.about_text) * (NORMAL_FONT.size("a")[1] + 10)
+        
+        # Implement scrolling logic within the text area
+        if total_text_height > scroll_box_height:
+            if scroll_y > 0:
+                scroll_y = 0
+            elif scroll_y < -(total_text_height - scroll_box_height):
+                scroll_y = -(total_text_height - scroll_box_height)
+        else:
+            scroll_y = 0 # If the total text height doesn't exceed the window height, no scrolling necessary
+        
+        rendered_text_height = 0
+        for text_surface in self.about_text:
+            text_rect = text_surface.get_rect(center=(scroll_box_height, y_position + scroll_y))
+            if 0 <= text_rect.centery < scroll_box_height:
+                self.menu_window.blit(text_surface, text_rect)
+                rendered_text_height += text_rect.height + 10
+                y_position += text_rect.height + 10 # Adjust vertical (line) spacing
+            else:
+                break # Stop rendering if text is outside the scrolling area
+        
+        return scroll_y
     
-    def concat_text(self, text):
-        self.text += text
+    
+    def load_file(self, file_path):
+        """
+        Load file from file path
+        """
+        try:
+            with open(file_path, 'r', encoding='utf-8', errors='replace') as file:
+                file_contents = file.read()
+                if DEBUG: print("File read successfully!")
+        except FileNotFoundError:
+            print(f"ERROR: File '{file_path}' not found!")
+        
+        return file_contents
+    
+    
+    def wrap_text(self, text):
+        """
+        Wrap text to the given max line length
+        """
+        avg_char_width = NORMAL_FONT.size("a")[0]
+        words = text.split()
+        lines = []
+        current_line = []
+        current_length = 0
+        for word in words:
+            if (((current_length + len(word) + 1) * avg_char_width ) <= (self.window_center[0])):
+                current_line.append(word)
+                current_length += len(word) + 1
+            else:
+                lines.append(" ".join(current_line))
+                current_line = [word]
+                current_length = len(word)
+        lines.append(" ".join(current_line))
+        
+        return lines
+    
+    
+    def load_text(self):
+        """
+        Load formatted text ready to be rendered to the screen
+        """
+        file_contents = self.load_file(self.about_text_file_path)
+        wrapped_lines = self.wrap_text(file_contents)
+        text_list = []
+        
+        for line in wrapped_lines:
+            line = line.strip()
+            if line.startswith("# "): # Check for headings
+                text_surface = HEADING_FONT.render(line[2:], True, DARK_BLUE)
+                text_list.append(text_surface)
+            else:
+                text_surface = NORMAL_FONT.render(line, True, BLACK)
+                text_list.append(text_surface)
+        
+        return text_list
+    
+    
+    def load_image(self, file_path):
+        """
+        Load image from file
+        """
+        try:
+            image = pg.image.load(file_path).convert_alpha()
+        except FileNotFoundError:
+            print(f"ERROR: File '{file_path}' not found!")
+        return image
 
 
-def draw_text(window, text, color, position):
-    """
-    Render the given text to the menu screen
-    """
-    text_surface = FONT.render(text, True, color)
-    text_rect = text_surface.get_rect()
-    text_rect.center = position
-    window.blit(text_surface, text_rect)
+#######################################################################################################################
+
+def handle_button_click(buttons, click_position):
+    for button in buttons.items():
+        button_rect = button[1].image_rect
+        if button_rect.collidepoint(click_position):
+            button[1].action()
+            # return button.text()
+    
+    # # Return None if no button was clicked
+    # return None
+    # pass
 
 
+#######################################################################################################################
+# Menu Functions
+
+def start_game(simulation_settings):
+    print("Starting simulation...")
+    print("Grid size: {}, Num worms: {}, Frame rate: {}".format(simulation_settings.get("grid_size"), simulation_settings.get("num_worms"), simulation_settings.get("frame_rate")))
+    sim = PatersonsWormsSimulation(
+        simulation_settings.get("grid_size"), 
+        simulation_settings.get("num_worms"), 
+        simulation_settings.get("frame_rate"), 
+        simulation_settings.get("triangle_pattern"), 
+        simulation_settings.get("track_recent"), 
+        simulation_settings.get("num_track")
+        )
+    sim.run_simulation()
+    # pass
+
+def worm_says_hi():
+    print("Paterson's Worm Says Hi!")
+    # pass
+
+
+#######################################################################################################################
+# Game / Menu Loop
 def main():
+    # Menu instance
     menu = Menu()
-    
-    # Game variables
-    menu_state = "main"
-    game_running = False
-    
+    # scroll_y = menu.window_center[1] - (menu.window_center[1] // 2)
+    scroll_y = 0
     pg.display.set_caption("Start Menu")
     
-    # Load main menu button images
-    start_image = pg.image.load("assets/start-button.png").convert_alpha()
-    exit_image = pg.image.load("assets/exit-button.png").convert_alpha()
-    options_image = pg.image.load("assets/options-button.png").convert_alpha()
-    about_image = pg.image.load("assets/about-button.png").convert_alpha()
     
-    # Load sub-menu button images
-    back_image = pg.image.load("assets/back-button.png").convert_alpha()
-    fps_image = pg.image.load("assets/fps-button.png").convert_alpha()
-    grid_image = pg.image.load("assets/grid-button.png").convert_alpha()
-    pattern_image = pg.image.load("assets/pattern-button.png").convert_alpha()
-    track_image = pg.image.load("assets/track-button.png").convert_alpha()
-    worms_image = pg.image.load("assets/worms-button.png").convert_alpha()
-    
-    # Load options button images
-    # FPS options
-    fps_30 = pg.image.load("assets/30-fps.png").convert_alpha()
-    fps_60 = pg.image.load("assets/60-fps.png").convert_alpha()
-    fps_90 = pg.image.load("assets/90-fps.png").convert_alpha()
-    fps_120 = pg.image.load("assets/120-fps.png").convert_alpha()
-    
-    # Grid options
-    grid_100 = pg.image.load("assets/100-grid.png").convert_alpha()
-    grid_200 = pg.image.load("assets/200-grid.png").convert_alpha()
-    grid_300 = pg.image.load("assets/300-grid.png").convert_alpha()
-    grid_400 = pg.image.load("assets/400-grid.png").convert_alpha()
-    grid_500 = pg.image.load("assets/500-grid.png").convert_alpha()
-    
-    # Pattern options
-    triangle_pattern = pg.image.load("assets/triangle-pattern-button.png").convert_alpha()
-    square_pattern = pg.image.load("assets/square-pattern-button.png").convert_alpha()
-    
-    # Track options
-    track_10 = pg.image.load("assets/track-10.png").convert_alpha()
-    track_25 = pg.image.load("assets/track-25.png").convert_alpha()
-    track_50 = pg.image.load("assets/track-50.png").convert_alpha()
-    
-    # Worms options
-    worms_1 = pg.image.load("assets/1-worm.png").convert_alpha()
-    worms_3 = pg.image.load("assets/3-worms.png").convert_alpha()
-    worms_5 = pg.image.load("assets/5-worms.png").convert_alpha()
-    worms_10 = pg.image.load("assets/10-worms.png").convert_alpha()
-    
-    # Load worm image
-    worm_1 = pg.image.load("assets/worm-v3.png").convert_alpha()
-    worm_2 = pg.image.load("assets/worm-v4.png").convert_alpha()
-    
-    # Resize main menu button images
-    start_image = pg.transform.scale(start_image, (menu.button_width_main, menu.button_height_main))
-    exit_image = pg.transform.scale(exit_image, (menu.button_width_main, menu.button_height_main))
-    options_image = pg.transform.scale(options_image, (menu.button_width_main, menu.button_height_main))
-    about_image = pg.transform.scale(about_image, (menu.button_width_main, menu.button_height_main))
-    
-    # Resize sub-menu button images
-    back_image = pg.transform.scale(back_image, (menu.button_width_main, menu.button_height_main))
-    fps_image = pg.transform.scale(fps_image, (menu.button_width_main, menu.button_height_main))
-    grid_image = pg.transform.scale(grid_image, (menu.button_width_main, menu.button_height_main))
-    pattern_image = pg.transform.scale(pattern_image, (menu.button_width_main, menu.button_height_main))
-    track_image = pg.transform.scale(track_image, (menu.button_width_main, menu.button_height_main))
-    worms_image = pg.transform.scale(worms_image, (menu.button_width_main, menu.button_height_main))
-    
-    # Resize options buttons images
-    # FPS options
-    fps_30 = pg.transform.scale(fps_30, (menu.button_width_options_d, menu.button_height_options_d))
-    fps_60 = pg.transform.scale(fps_60, (menu.button_width_options_d, menu.button_height_options_d))
-    fps_90 = pg.transform.scale(fps_90, (menu.button_width_options_d, menu.button_height_options_d))
-    fps_120 = pg.transform.scale(fps_120, (menu.button_width_options_t, menu.button_height_options_t))
-    
-    # Grid options
-    grid_100 = pg.transform.scale(grid_100, (menu.button_width_options_t, menu.button_height_options_t))
-    grid_200 = pg.transform.scale(grid_200, (menu.button_width_options_t, menu.button_height_options_t))
-    grid_300 = pg.transform.scale(grid_300, (menu.button_width_options_t, menu.button_height_options_t))
-    grid_400 = pg.transform.scale(grid_400, (menu.button_width_options_t, menu.button_height_options_t))
-    grid_500 = pg.transform.scale(grid_500, (menu.button_width_options_t, menu.button_height_options_t))
-    
-    # Pattern options
-    triangle_pattern = pg.transform.scale(triangle_pattern, (menu.button_width_main, menu.button_height_main))
-    square_pattern = pg.transform.scale(square_pattern, (menu.button_width_main, menu.button_height_main))
-    
-    # Track options
-    track_10 = pg.transform.scale(track_10, (menu.button_width_options_s, menu.button_height_options_s))
-    track_25 = pg.transform.scale(track_25, (menu.button_width_options_s, menu.button_height_options_s))
-    track_50 = pg.transform.scale(track_50, (menu.button_width_options_s, menu.button_height_options_s))
-    
-    # Worms options
-    worms_1 = pg.transform.scale(worms_1, (menu.button_width_options_s, menu.button_height_options_s))
-    worms_3 = pg.transform.scale(worms_3, (menu.button_width_options_s, menu.button_height_options_s))
-    worms_5 = pg.transform.scale(worms_5, (menu.button_width_options_s, menu.button_height_options_s))
-    worms_10 = pg.transform.scale(worms_10, (menu.button_width_options_d, menu.button_height_options_d))
-    
-    # Resize worm image
-    worm_1 = pg.transform.scale(worm_1, (menu.worm_height_1, menu.worm_width_1))
-    worm_2 = pg.transform.scale(worm_2, (menu.worm_height_2, menu.worm_width_2))
-    
+    # Button Positions:
     
     # X Positions:
     center_x = menu.screen_height // 2
@@ -176,326 +217,277 @@ def main():
     option_button_d_mid_x = (center_x - (menu.button_width_options_d // 2))
     
     # Main Button Positions:
-    pos_1 = (main_button_mid_x, (main_button_mid_x - main_button_mid_x * 0.4))                  # Top-Center
-    pos_2 = (main_button_mid_x, (main_button_mid_x - main_button_mid_x * 0.2))                  # Upper-Center
-    pos_3 = (main_button_mid_x, main_button_mid_x)                                              # Middle-Center
-    pos_4 = (main_button_mid_x, (main_button_mid_x + main_button_mid_x * 0.2))                  # Lower-Center
-    pos_5 = (main_button_mid_x, (main_button_mid_x + main_button_mid_x * 0.4))                  # Lower-Center
-    pos_6 = (main_button_mid_x, (main_button_mid_x + main_button_mid_x * 0.6))                  # Lower-Center
+    worm_pos = (main_button_mid_x, (main_button_mid_x - main_button_mid_x * 0.6)) # Top-Top-Center
+    pos_1 = (main_button_mid_x, (main_button_mid_x - main_button_mid_x * 0.4)) # Top-Center
+    pos_2 = (main_button_mid_x, (main_button_mid_x - main_button_mid_x * 0.2)) # Upper-Center
+    pos_3 = (main_button_mid_x, main_button_mid_x) # Middle-Center
+    pos_4 = (main_button_mid_x, (main_button_mid_x + main_button_mid_x * 0.2)) # Lower-Center
+    pos_5 = (main_button_mid_x, (main_button_mid_x + main_button_mid_x * 0.4)) # Lower-Center
+    pos_6 = (main_button_mid_x, (main_button_mid_x + main_button_mid_x * 0.6)) # Lower-Center
     
     # Options Button Positions:
-    pos_7 = (option_button_d_mid_x, (option_button_d_mid_x - option_button_d_mid_x * 0.2))      # Upper-Center
-    pos_8 = (option_button_d_mid_x, option_button_d_mid_x)                                      # Middle-Center
-    pos_9 = (option_button_d_mid_x, (option_button_d_mid_x + option_button_d_mid_x * 0.2))      # Lower-Center
-    pos_10 = (option_button_d_mid_x, (option_button_d_mid_x + option_button_d_mid_x * 0.4))      # Lower-Center
-    pos_11 = (option_button_d_mid_x, (option_button_d_mid_x + option_button_d_mid_x * 0.6))      # Bottom-Center
+    pos_7 = (option_button_d_mid_x, (option_button_d_mid_x - option_button_d_mid_x * 0.2)) # Upper-Center
+    pos_8 = (option_button_d_mid_x, option_button_d_mid_x) # Middle-Center
+    pos_9 = (option_button_d_mid_x, (option_button_d_mid_x + option_button_d_mid_x * 0.2)) # Lower-Center
+    pos_10 = (option_button_d_mid_x, (option_button_d_mid_x + option_button_d_mid_x * 0.4)) # Lower-Center
+    pos_11 = (option_button_d_mid_x, (option_button_d_mid_x + option_button_d_mid_x * 0.6)) # Bottom-Center
     
+    
+    # Initialise Simulation Defaults:
+    simulation_settings = {
+        "menu_state": "main",
+        "game_running": False,
+        "menu_running": True,
+        "frame_rate": 60,
+        "grid_size": 200,
+        "triangle_pattern": True,
+        "track_recent": True,
+        "num_track": 10,
+        "num_worms": 5
+    }
+    # default_frame_rate = 60
+    # default_grid_size = 200
+    # default_triangle_pattern = True
+    # default_track_recent = True
+    # default_num_track = 10
+    # default_num_worms = 5
+    
+    
+    # Define Button Functions:
+    
+    # Partial functions with pre-defined arguments
+    start_game_partial = partial(start_game, simulation_settings)
+    worm_greeting_partial = partial(worm_says_hi)
+    
+    # Functions to update game variables
+    update_menu_state = lambda state: simulation_settings.update({"menu_state": state})
+    exit_game = lambda state: simulation_settings.update({"game_running": state}) # TODO: Implement functionality
+    exit_menu = lambda state: simulation_settings.update({"menu_running": state})
+    
+    # Functions to update simulation default variables
+    update_frame_rate = lambda rate: simulation_settings.update({"frame_rate": rate})
+    update_grid_size = lambda size: simulation_settings.update({"grid_size": size})
+    update_triangle_pattern = lambda pattern: simulation_settings.update({"triangle_pattern": pattern})
+    update_track_recent = lambda track: simulation_settings.update({"track_recent": track})
+    update_num_track = lambda num: simulation_settings.update({"num_track": num})
+    update_num_worms = lambda num: simulation_settings.update({"num_worms": num})
+    
+    
+    # Define Buttons:
     
     # Main Menu Buttons:
-    options_p = pos_1 
-    start_p = pos_2
-    about_p = pos_3
-    exit_p = pos_4
+    start_button = Button(menu, pos_2, "assets/start-button.png", menu.button_width_main, menu.button_height_main, "start", start_game_partial)
+    exit_button = Button(menu, pos_4, "assets/exit-button.png", menu.button_width_main, menu.button_height_main, "exit", lambda: exit_menu(False))
+    options_button = Button(menu, pos_1, "assets/options-button.png", menu.button_width_main, menu.button_height_main, "options", lambda: update_menu_state("sub"))
+    about_button = Button(menu, pos_3, "assets/about-button.png", menu.button_width_main, menu.button_height_main, "about", lambda: update_menu_state("about"))
+    worm_button = Button(menu, worm_pos, "assets/worm-v4.png", menu.worm_width_2, menu.worm_height_2, "worm_greeting", worm_greeting_partial)
     
-    # Sub-menu Buttons:
-    back_p = pos_1
-    fps_p = pos_2       
-    grid_p = pos_3
-    pattern_p = pos_4
-    track_p = pos_5
-    worms_p = pos_6
+    # Sub-Menu Buttons:
+    main_back_button = Button(menu, pos_1, "assets/back-button.png", menu.button_width_main, menu.button_height_main, "back", lambda: update_menu_state("main"))
+    fps_button = Button(menu, pos_2, "assets/fps-button.png", menu.button_width_main, menu.button_height_main, "fps", lambda: update_menu_state("options-fps"))
+    grid_button = Button(menu, pos_3, "assets/grid-button.png", menu.button_width_main, menu.button_height_main, "grid", lambda: update_menu_state("options-grid"))
+    worms_button = Button(menu, pos_6, "assets/worms-button.png", menu.button_width_main, menu.button_height_main, "worms", lambda: update_menu_state("options-worms"))
+    pattern_button = Button(menu, pos_4, "assets/pattern-button.png", menu.button_width_main, menu.button_height_main, "pattern", lambda: update_menu_state("options-pattern"))
+    track_button = Button(menu, pos_5, "assets/track-button.png", menu.button_width_main, menu.button_height_main, "track", lambda: update_menu_state("options-track"))
     
-    # Options Buttons:
-    # FPS Options:
-    fps_30_p = pos_7
-    fps_60_p = pos_8
-    fps_90_p = pos_9
-    fps_120_p = pos_10
+    # Options Menu Buttons:
+    # Shared Back Button
+    sub_back_button = Button(menu, pos_1, "assets/back-button.png", menu.button_width_main, menu.button_height_main, "back", lambda: update_menu_state("sub"))
     
-    # Grid Options:
-    grid_100_p = pos_7
-    grid_200_p = pos_8
-    grid_300_p = pos_9
-    grid_400_p = pos_10
-    grid_500_p = pos_11
+    # FPS Options Buttons
+    fps_30_button = Button(menu, pos_7, "assets/30-fps.png", menu.button_width_options_d, menu.button_height_options_d, "fps_30", lambda: update_frame_rate(30))
+    fps_60_button = Button(menu, pos_8, "assets/60-fps.png", menu.button_width_options_d, menu.button_height_options_d, "fps_60", lambda: update_frame_rate(60))
+    fps_90_button = Button(menu, pos_9, "assets/90-fps.png", menu.button_width_options_d, menu.button_height_options_d, "fps_90", lambda: update_frame_rate(90))
+    fps_120_button = Button(menu, pos_10, "assets/120-fps.png", menu.button_width_options_t, menu.button_height_options_t, "fps_120", lambda: update_frame_rate(120))
     
-    # Pattern Options:
-    triangle_pattern_p = pos_3
-    square_pattern_p = pos_4
+    # Grid Options Buttons
+    grid_100_button = Button(menu, pos_7, "assets/100-grid.png", menu.button_width_options_t, menu.button_height_options_t, "grid_100", lambda: update_grid_size(100))
+    grid_200_button = Button(menu, pos_8, "assets/200-grid.png", menu.button_width_options_t, menu.button_height_options_t, "grid_200", lambda: update_grid_size(200))
+    grid_300_button = Button(menu, pos_9, "assets/300-grid.png", menu.button_width_options_t, menu.button_height_options_t, "grid_300", lambda: update_grid_size(300))
+    grid_400_button = Button(menu, pos_10, "assets/400-grid.png", menu.button_width_options_t, menu.button_height_options_t, "grid_400", lambda: update_grid_size(400))
+    grid_500_button = Button(menu, pos_11, "assets/500-grid.png", menu.button_width_options_t, menu.button_height_options_t, "grid_500", lambda: update_grid_size(500))
     
-    # Track Options:
-    track_10_p = pos_7
-    track_25_p = pos_8
-    track_50_p = pos_9
+    # Movement Pattern Options Buttons
+    triangle_pattern_button = Button(menu, pos_3, "assets/triangle-pattern-button.png", menu.button_width_main, menu.button_height_main, "triangle_pattern", lambda: update_triangle_pattern(True))
+    square_pattern_button = Button(menu, pos_4, "assets/square-pattern-button.png", menu.button_width_main, menu.button_height_main, "square_pattern", lambda: update_triangle_pattern(False))
     
-    # Worms Options:
-    worms_1_p = pos_7
-    worms_3_p = pos_8
-    worms_5_p = pos_9
-    worms_10_p = pos_10
+    # Track Movements Options Buttons
+    track_10_button = Button(menu, pos_7, "assets/track-10.png", menu.button_width_options_s, menu.button_height_options_s, "track_10", lambda: update_track_recent(True) and update_num_track(10))
+    track_25_button = Button(menu, pos_8, "assets/track-25.png", menu.button_width_options_s, menu.button_height_options_s, "track_25", lambda: update_track_recent(True) and update_num_track(25))
+    track_50_button = Button(menu, pos_9, "assets/track-50.png", menu.button_width_options_s, menu.button_height_options_s, "track_50", lambda: update_track_recent(True) and update_num_track(50))
+    
+    # Worms Options Buttons
+    worms_1_button = Button(menu, pos_7, "assets/1-worm.png", menu.button_width_options_s, menu.button_height_options_s, "worms_1", lambda: update_num_worms(1))
+    worms_3_button = Button(menu, pos_8, "assets/3-worms.png", menu.button_width_options_s, menu.button_height_options_s, "worms_3", lambda: update_num_worms(3))
+    worms_5_button = Button(menu, pos_9, "assets/5-worms.png", menu.button_width_options_s, menu.button_height_options_s, "worms_5", lambda: update_num_worms(5))
+    worms_10_button = Button(menu, pos_10, "assets/10-worms.png", menu.button_width_options_d, menu.button_height_options_d, "worms_10", lambda: update_num_worms(10))
+    
+    
+    # Create Button Dictionaries:
+    main_menu_buttons = {
+        "start_button": start_button,
+        "exit_button": exit_button,
+        "options_button": options_button,
+        "about_button": about_button,
+        "worm_button": worm_button
+    }
+    
+    sub_menu_buttons = {
+        "back_button": main_back_button,
+        "fps_button": fps_button,
+        "grid_button": grid_button,
+        "worms_button": worms_button,
+        "pattern_button": pattern_button,
+        "track_button": track_button,
+        "worm_button": worm_button
+    }
+    
+    about_section_buttons = {
+        "back_button": main_back_button,
+        "worm_button": worm_button
+    }
+    
+    fps_options_menu_buttons = {
+        "back_button": sub_back_button,
+        "fps_30_button": fps_30_button,
+        "fps_60_button": fps_60_button,
+        "fps_90_button": fps_90_button,
+        "fps_120_button": fps_120_button,
+        "worm_button": worm_button
+    }
+    
+    grid_options_menu_buttons = {
+        "back_button": sub_back_button,
+        "grid_100_button": grid_100_button,
+        "grid_200_button": grid_200_button,
+        "grid_300_button": grid_300_button,
+        "grid_400_button": grid_400_button,
+        "grid_500_button": grid_500_button,
+        "worm_button": worm_button
+    }
+    
+    worms_options_menu_buttons = {
+        "back_button": sub_back_button,
+        "worms_1_button": worms_1_button,
+        "worms_3_button": worms_3_button,
+        "worms_5_button": worms_5_button,
+        "worms_10_button": worms_10_button,
+        "worm_button": worm_button
+    }
+    
+    track_options_menu_buttons = {
+        "back_button": sub_back_button,
+        "track_10_button": track_10_button,
+        "track_25_button": track_25_button,
+        "track_50_button": track_50_button,
+        "worm_button": worm_button
+    }
+    
+    movement_pattern_options_menu_buttons = {
+        "back_button": sub_back_button,
+        "triangle_pattern_button": triangle_pattern_button,
+        "square_pattern_button": square_pattern_button,
+        "worm_button": worm_button
+    }
 
-    # Worm Position
-    worm_x = ((menu.screen_height // 2) - (menu.worm_height_2 // 2))
-    worm_p_1 = (worm_x, (worm_x - worm_x * 0.8))
-    
-    # Create Button Instances
-    # Main Menu Buttons:
-    options_button = Button(menu, options_p, options_image, "menu")
-    start_button = Button(menu, start_p, start_image, "start")
-    exit_button = Button(menu, exit_p, exit_image, "exit")
-    about_button = Button(menu, about_p, about_image, "about")
-    
-    # Sub-menu Buttons:
-    fps_button = Button(menu, fps_p, fps_image, "fps")
-    grid_button = Button(menu, grid_p, grid_image, "grid")
-    pattern_button = Button(menu, pattern_p, pattern_image, "pattern")
-    track_button = Button(menu, track_p, track_image, "track")
-    worms_button = Button(menu, worms_p, worms_image, "worms")
-    back_button = Button(menu, back_p, back_image, "back")
-    
-    # Options Buttons:
-    # FPS Options:
-    fps_30_button = Button(menu, fps_30_p, fps_30, "fps_30")
-    fps_60_button = Button(menu, fps_60_p, fps_60, "fps_60")
-    fps_90_button = Button(menu, fps_90_p, fps_90, "fps_90")
-    fps_120_button = Button(menu, fps_120_p, fps_120, "fps_120")
-    
-    # Grid Options:
-    grid_100_button = Button(menu, grid_100_p, grid_100, "grid_100")
-    grid_200_button = Button(menu, grid_200_p, grid_200, "grid_200")
-    grid_300_button = Button(menu, grid_300_p, grid_300, "grid_300")
-    grid_400_button = Button(menu, grid_400_p, grid_400, "grid_400")
-    grid_500_button = Button(menu, grid_500_p, grid_500, "grid_500")
-    
-    # Pattern Options:
-    triangle_pattern_button = Button(menu, triangle_pattern_p, triangle_pattern, "triangle_pattern")
-    square_pattern_button = Button(menu, square_pattern_p, square_pattern, "square_pattern")
-    
-    # Track Options:
-    track_10_button = Button(menu, track_10_p, track_10, "track_10")
-    track_25_button = Button(menu, track_25_p, track_25, "track_25")
-    track_50_button = Button(menu, track_50_p, track_50, "track_50")
-    
-    # Worms Options:
-    worms_1_button = Button(menu, worms_1_p, worms_1, "worms_1")
-    worms_3_button = Button(menu, worms_3_p, worms_3, "worms_3")
-    worms_5_button = Button(menu, worms_5_p, worms_5, "worms_5")
-    worms_10_button = Button(menu, worms_10_p, worms_10, "worms_10")
-    
-    # Worm Button:
-    worm_button_1 = Button(menu, worm_p_1, worm_1, "worm_1")
-    worm_button_2 = Button(menu, worm_p_1, worm_2, "worm_2")
-    
-    
-    # Initialise Simulation Defaults
-    frame_rate = 60
-    grid_size = 200
-    triangle_pattern = True
-    track_recent = True
-    num_track = 10
-    num_worms = 5
-
-    running = True
-    while running:
+    # Main Menu Loop
+    while simulation_settings.get("menu_running"):
         # Start menu
         menu.menu_window.fill(PASTEL_BLUE)
         
-        # Display Main Menu
-        if game_running == False:
-            # Main Menu Buttons:
-            if menu_state == "main":
-                if start_button.draw():
-                    print("Start button pressed. Starting simulation...")
-                    print("Grid size: {}, Num worms: {}, Frame rate: {}".format(grid_size, num_worms, frame_rate))
-                    sim = PatersonsWormsSimulation(grid_size, num_worms, frame_rate, triangle_pattern, track_recent, num_track)
-                    sim.run_simulation()
-                
-                elif exit_button.draw():
-                    print("Exit button pressed. Thanks for coming!")
-                    running = False
-                
-                elif options_button.draw():
-                    if DEBUG: print("Options button pressed. Opening options menu...")
-                    menu_state = "sub"
-                
-                elif about_button.draw():
-                    if DEBUG: print("About button pressed. Opening about menu...")
-                    menu_state = "about"
-                
-                elif worm_button_2.draw():
-                    print("Paterson's Worm Says Hi!")
+        # Calculate visible text content
+        # visible_text_content = []
+        y_position = menu.screen_height // 2
+        # for item in menu.about_text:
+        #     visible_text_content.append(item)
+        
+        # Get mouse position
+        click_position = pg.mouse.get_pos()
+        
+        # Display Game Menu/s
+        if not simulation_settings.get("game_running"):
+            # Display Main Menu Buttons:
+            if simulation_settings.get("menu_state") == "main":
+                for button in main_menu_buttons.items():
+                    button[1].draw()
             
-            # Sub-menu Buttons:
-            elif menu_state == "sub":
-                if back_button.draw():
-                    if DEBUG: print("Back button pressed!")
-                    menu_state = "main"
-                
-                elif fps_button.draw():
-                    if DEBUG: print("FPS button pressed!")
-                    menu_state = "options-fps"
-                
-                elif grid_button.draw():
-                    if DEBUG: print("Grid button pressed!")
-                    menu_state = "options-grid"
-                
-                elif worms_button.draw():
-                    if DEBUG: print("Worms button pressed!")
-                    menu_state = "options-worms"
-                
-                elif worm_button_2.draw():
-                    print("Paterson's Worm Says Hi!")
-
-                elif pattern_button.draw():
-                    if DEBUG: print("Pattern button pressed!")
-                    menu_state = "options-pattern"
-                    
-                elif track_button.draw():
-                    if DEBUG: print("Track button pressed!")
-                    menu_state = "options-track"
+            # Display Sub-menu Buttons:
+            elif simulation_settings.get("menu_state") == "sub":
+                for button in sub_menu_buttons.items():
+                    button[1].draw()
             
-            # Options Buttons:
-            # FPS Options Buttons
-            elif menu_state == "options-fps":
-                if fps_30_button.draw():
-                    if DEBUG: print("30 FPS button pressed!")
-                    frame_rate = 30
-                
-                elif fps_60_button.draw():
-                    if DEBUG: print("60 FPS button pressed!")
-                    frame_rate = 60
-                
-                elif fps_90_button.draw():
-                    if DEBUG: print("90 FPS button pressed!")
-                    frame_rate = 90
-                
-                elif fps_120_button.draw():
-                    if DEBUG: print("120 FPS button pressed!")
-                    frame_rate = 120
-                
-                elif back_button.draw():
-                    if DEBUG: print("Back button pressed!")
-                    menu_state = "sub"
-                
-                elif worm_button_2.draw():
-                    print("Paterson's Worm Says Hi!")
+            # Display Options Buttons:
+            # Display FPS Options Buttons:
+            elif simulation_settings.get("menu_state") == "options-fps":
+                for button in fps_options_menu_buttons.items():
+                    button[1].draw()
             
-            # Grid Options Buttons
-            elif menu_state == "options-grid":
-                if grid_100_button.draw():
-                    if DEBUG: print("100 grid button pressed!")
-                    grid_size = 100
-                
-                elif grid_200_button.draw():
-                    if DEBUG: print("200 grid button pressed!")
-                    grid_size = 200
-                
-                elif grid_300_button.draw():
-                    if DEBUG: print("300 grid button pressed!")
-                    grid_size = 300
-                
-                elif grid_400_button.draw():
-                    if DEBUG: print("400 grid button pressed!")
-                    grid_size = 400
-                
-                elif grid_500_button.draw():
-                    if DEBUG: print("500 grid button pressed!")
-                    grid_size = 500
-                
-                elif back_button.draw():
-                    if DEBUG: print("Back button pressed!")
-                    menu_state = "sub"
-                
-                elif worm_button_2.draw():
-                    print("Paterson's Worm Says Hi!")
+            # Display Grid Options Buttons:
+            elif simulation_settings.get("menu_state") == "options-grid":
+                for button in grid_options_menu_buttons.items():
+                    button[1].draw()
             
-            # Movement Pattern Options Buttons
-            elif menu_state == "options-pattern":
-                if triangle_pattern_button.draw():
-                    if DEBUG: print("1 worm button pressed!")
-                    triangle_pattern = True
-                
-                elif square_pattern_button.draw():
-                    if DEBUG: print("3 worms button pressed!")
-                    triangle_pattern = False
-                
-                elif back_button.draw():
-                    if DEBUG: print("Back button pressed!")
-                    menu_state = "sub"
-                
-                elif worm_button_2.draw():
-                    print("Paterson's Worm Says Hi!")
+            # Display Movement Pattern Options Buttons:
+            elif simulation_settings.get("menu_state") == "options-pattern":
+                for button in movement_pattern_options_menu_buttons.items():
+                    button[1].draw()
             
-            # Track Movements Options Buttons
-            elif menu_state == "options-track":
-                if track_10_button.draw():
-                    if DEBUG: print("1 worm button pressed!")
-                    track_recent = True
-                    num_track = 10
-                
-                elif track_25_button.draw():
-                    if DEBUG: print("3 worms button pressed!")
-                    track_recent = True
-                    num_track = 25
-                
-                elif track_50_button.draw():
-                    if DEBUG: print("5 worms button pressed!")
-                    track_recent = True
-                    num_track = 50
+            # Display Track Movements Options Buttons:
+            elif simulation_settings.get("menu_state") == "options-track":
+                for button in track_options_menu_buttons.items():
+                    button[1].draw()
             
-                elif back_button.draw():
-                    if DEBUG: print("Back button pressed!")
-                    menu_state = "sub"
-                
-                elif worm_button_2.draw():
-                    print("Paterson's Worm Says Hi!")
+            # Display Worms Options Buttons:
+            elif simulation_settings.get("menu_state") == "options-worms":
+                for button in worms_options_menu_buttons.items():
+                    button[1].draw()
             
-            # Worms Options Buttons
-            elif menu_state == "options-worms":
-                if worms_1_button.draw():
-                    print("1 worm button pressed!")
-                    num_worms = 1
+            # Display About Section:
+            elif simulation_settings.get("menu_state") == "about":
+                for button in about_section_buttons.items():
+                    button[1].draw()
                 
-                elif worms_3_button.draw():
-                    print("3 worms button pressed!")
-                    num_worms = 3
-                
-                elif worms_5_button.draw():
-                    print("5 worms button pressed!")
-                    num_worms = 5
-                
-                elif worms_10_button.draw():
-                    print("10 worms button pressed!")
-                    num_worms = 10
-                
-                elif back_button.draw():
-                    print("Back button pressed!")
-                    menu_state = "sub"
-                
-                elif worm_button_2.draw():
-                    print("Paterson's Worm Says Hi!")
-            
-            # About menu buttons
-            elif menu_state == "about":
-                if back_button.draw():
-                    print("Back button pressed!")
-                    menu_state = "main"
-                
-                elif worm_button_2.draw():
-                    print("Paterson's Worm Says Hi!")
-                
-                else:
-                    # Display text on screen
-                    draw_text(menu.menu_window, menu.text, BLACK, (menu.screen_height // 2, menu.screen_height // 2))
+                # Draw about section text
+                scroll_y = menu.draw_text(y_position, scroll_y)
+                # pg.display.flip()
         
         # Event handler
         for event in pg.event.get():
+            # TODO: Check what this does... & remove if not needed
             if event.type == pg.KEYDOWN:
                 if event.key == pg.K_SPACE:
-                    game_running = False
+                    simulation_settings.update({"game_running": False})
             
-            if event.type == pg.QUIT:
-                running = False
+            elif event.type == pg.QUIT:
+                simulation_settings.update({"menu_running": False})
+            
+            # Handle Button Clicks
+            elif event.type == pg.MOUSEBUTTONDOWN and event.button == 1: # Left click
+                    # Check menu state
+                    if simulation_settings.get("menu_state") == "main":
+                        handle_button_click(main_menu_buttons, click_position)
+                    elif simulation_settings.get("menu_state") == "sub":
+                        handle_button_click(sub_menu_buttons, click_position)
+                    elif simulation_settings.get("menu_state") == "options-fps":
+                        handle_button_click(fps_options_menu_buttons, click_position)
+                    elif simulation_settings.get("menu_state") == "options-grid":
+                        handle_button_click(grid_options_menu_buttons, click_position)
+                    elif simulation_settings.get("menu_state") == "options-worms":
+                        handle_button_click(worms_options_menu_buttons, click_position)
+                    elif simulation_settings.get("menu_state") == "options-track":
+                        handle_button_click(track_options_menu_buttons, click_position)
+                    elif simulation_settings.get("menu_state") == "options-pattern":
+                        handle_button_click(movement_pattern_options_menu_buttons, click_position)
+                    elif simulation_settings.get("menu_state") == "about":
+                        handle_button_click(about_section_buttons, click_position)
+            
+            elif event.type == pg.MOUSEBUTTONDOWN and event.button == 4: # Scroll up
+                print("Scrolling up...")
+                scroll_y += 10
+            
+            elif event.type == pg.MOUSEBUTTONDOWN and event.button == 5: # Scroll down
+                print("Scrolling down...")
+                scroll_y -= 10
         
         # Limit menu frame rate
         pg.time.delay(menu.frame_rate)
