@@ -1,0 +1,3 @@
+# Algorithm Overview:
+
+The algorithm operates on a two-dimensional grid, where each cell can be alive or dead. A group of worms moves independently at each time step, toggling the state of the cell they are on (alive to dead or vice versa). At each step, a worm randomly selects one of its neighbouring cells (including diagonals if simulated on an orthogonal grid), toggles its state, and moves to the selected cell. This simple rule leads to the emergence of intricate structures and behaviours, showcasing the concept of emergent behaviour in CA.

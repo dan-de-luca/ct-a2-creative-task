@@ -1,0 +1,3 @@
+# Rules:
+
+Conway proposed a different way of looking at worm paths, by looking at the worms as “eaters”, rather than explorers, and the lines on a grid as the food. Conway defines decision making rules as follows: Worms never take paths previously travelled, as they no longer contain food – or are at least far less likely to. Thus, the worm makes choices at each grid node based on each possible gridline having two states, eaten or uneaten (Gardner, 1973). Paterson’s Worms were originally simulated on an infinite triangular grid, moving along gridlines. Based on encountered and unencountered lines, the worm determines its direction.

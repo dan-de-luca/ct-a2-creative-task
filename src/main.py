@@ -35,8 +35,12 @@ class Menu:
         self.menu_window = pg.display.set_mode((self.screen_height, self.screen_height))
         self.window_center = (self.screen_height // 2, self.screen_height // 2)
         self.frame_rate = 60 # Default frame rate
-        self.about_text_file_path = os.path.join('assets', 'about.txt')
-        self.about_text = self.load_text()
+        
+        # About section file paths:
+        self.about_full_text = os.path.join('assets', 'about.txt')
+        self.about_history_section = os.path.join('assets', 'about_history.txt')
+        self.about_rules_section = os.path.join('assets', 'about_rules.txt')
+        self.about_algorithm_section = os.path.join('assets', 'about_algorithm.txt')
         # self.about_text_length = len(self.about_text)
         # self.about_text_box_max_y = self.window_center[1] // 2
         # self.about_text_box_min_y = self.about_text_box_max_y + self.window_center[1]
@@ -66,13 +70,13 @@ class Menu:
     # def get_about_text_height(self):
     #     return sum(item[1].get_height() + 10 for item in self.about_text)
 
-    def draw_text(self, y_position, scroll_y):
+    def draw_text(self, text, y_position, scroll_y):
         """
         Render the given text to the menu screen with scrolling
         """
         # Calculate total text height
         scroll_box_height = self.screen_height // 2
-        total_text_height = len(self.about_text) * (NORMAL_FONT.size("a")[1] + 10)
+        total_text_height = len(text) * (NORMAL_FONT.size("a")[1] + 10)
         
         # Implement scrolling logic within the text area
         if total_text_height > scroll_box_height:
@@ -84,7 +88,7 @@ class Menu:
             scroll_y = 0 # If the total text height doesn't exceed the window height, no scrolling necessary
         
         rendered_text_height = 0
-        for text_surface in self.about_text:
+        for text_surface in text:
             text_rect = text_surface.get_rect(center=(scroll_box_height, y_position + scroll_y))
             if 0 <= text_rect.centery < scroll_box_height:
                 self.menu_window.blit(text_surface, text_rect)
@@ -290,6 +294,12 @@ def main():
     pattern_button = Button(menu, pos_4, "assets/pattern-button.png", menu.button_width_main, menu.button_height_main, "pattern", lambda: update_menu_state("options-pattern"))
     track_button = Button(menu, pos_5, "assets/track-button.png", menu.button_width_main, menu.button_height_main, "track", lambda: update_menu_state("options-track"))
     
+    # About Section Buttons:
+    about_back_button = Button(menu, pos_1, "assets/back-button.png", menu.button_width_main, menu.button_height_main, "back", lambda: update_menu_state("about"))
+    about_rules_button = Button(menu, pos_2, "assets/rules-button.png", menu.button_width_main, menu.button_height_main, "rules", lambda: update_menu_state("about-rules"))
+    about_history_button = Button(menu, pos_3, "assets/history-button.png", menu.button_width_main, menu.button_height_main, "history", lambda: update_menu_state("about-history"))
+    about_algorithm_button = Button(menu, pos_4, "assets/algorithm-button.png", menu.button_width_main, menu.button_height_main, "algorithm", lambda: update_menu_state("about-algorithm"))
+    
     # Options Menu Buttons:
     # Shared Back Button
     sub_back_button = Button(menu, pos_1, "assets/back-button.png", menu.button_width_main, menu.button_height_main, "back", lambda: update_menu_state("sub"))
@@ -342,8 +352,26 @@ def main():
         "worm_button": worm_button
     }
     
-    about_section_buttons = {
+    about_menu_buttons = {
         "back_button": main_back_button,
+        "about_history_button": about_history_button,
+        "about_rules_button": about_rules_button,
+        "about_algorithm_button": about_algorithm_button,
+        "worm_button": worm_button
+    }
+    
+    about_history_section_buttons = {
+        "back_button": about_back_button,
+        "worm_button": worm_button
+    }
+    
+    about_rules_section_buttons = {
+        "back_button": about_back_button,
+        "worm_button": worm_button
+    }
+    
+    about_algorithm_section_buttons = {
+        "back_button": about_back_button,
         "worm_button": worm_button
     }
     
@@ -444,12 +472,26 @@ def main():
             
             # Display About Section:
             elif simulation_settings.get("menu_state") == "about":
-                for button in about_section_buttons.items():
+                for button in about_menu_buttons.items():
                     button[1].draw()
                 
+            # Display About - History Section:
+            elif simulation_settings.get("menu_state") == "about-history":
+                
                 # Draw about section text
-                scroll_y = menu.draw_text(y_position, scroll_y)
-                # pg.display.flip()
+                scroll_y = menu.draw_text(menu.about_history_section, y_position, scroll_y)
+            
+            # Display About - Rules Section:
+            elif simulation_settings.get("menu_state") == "about-rules":
+                
+                # Draw about section text
+                scroll_y = menu.draw_text(menu.about_rules_section, y_position, scroll_y)
+            
+            # Display About - Algorithm Section:
+            elif simulation_settings.get("menu_state") == "about-algorithm":
+                
+                # Draw about section text
+                scroll_y = menu.draw_text(menu.about_algorithm_section, y_position, scroll_y)
         
         # Event handler
         for event in pg.event.get():
@@ -479,7 +521,13 @@ def main():
                     elif simulation_settings.get("menu_state") == "options-pattern":
                         handle_button_click(movement_pattern_options_menu_buttons, click_position)
                     elif simulation_settings.get("menu_state") == "about":
-                        handle_button_click(about_section_buttons, click_position)
+                        handle_button_click(about_menu_buttons, click_position)
+                    elif simulation_settings.get("menu_state") == "about-history":
+                        handle_button_click(about_history_section_buttons, click_position)
+                    elif simulation_settings.get("menu_state") == "about-rules":
+                        handle_button_click(about_rules_section_buttons, click_position)
+                    elif simulation_settings.get("menu_state") == "about-algorithm":
+                        handle_button_click(about_algorithm_section_buttons, click_position)
             
             elif event.type == pg.MOUSEBUTTONDOWN and event.button == 4: # Scroll up
                 print("Scrolling up...")
