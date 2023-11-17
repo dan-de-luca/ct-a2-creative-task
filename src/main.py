@@ -48,6 +48,10 @@ class Menu:
         # Add any additional attributes here
         
         # Dynamic Button Sizes:
+        # Title Button Size
+        self.button_width_title = int(0.5 * self.screen_height)
+        self.button_height_title = int(0.1 * self.screen_height)
+        
         # Main Menu Button Size
         self.button_width_main = int(0.24 * self.screen_height)
         self.button_height_main = int(0.06 * self.screen_height)
@@ -70,10 +74,13 @@ class Menu:
     # def get_about_text_height(self):
     #     return sum(item[1].get_height() + 10 for item in self.about_text)
 
-    def draw_text(self, text, y_position, scroll_y):
+    def draw_text(self, y_position, scroll_y, file_path):
         """
         Render the given text to the menu screen with scrolling
         """
+        # Load text
+        text = self.load_text(file_path)
+        
         # Calculate total text height
         scroll_box_height = self.screen_height // 2
         total_text_height = len(text) * (NORMAL_FONT.size("a")[1] + 10)
@@ -136,11 +143,11 @@ class Menu:
         return lines
     
     
-    def load_text(self):
+    def load_text(self, file_path):
         """
         Load formatted text ready to be rendered to the screen
         """
-        file_contents = self.load_file(self.about_text_file_path)
+        file_contents = self.load_file(file_path)
         wrapped_lines = self.wrap_text(file_contents)
         text_list = []
         
@@ -184,6 +191,10 @@ def handle_button_click(buttons, click_position):
 #######################################################################################################################
 # Menu Functions
 
+def welcome_to_game():
+    print("Welcome to Paterson's Worms!")
+    # pass
+
 def start_game(simulation_settings):
     print("Starting simulation...")
     print("Grid size: {}, Num worms: {}, Frame rate: {}".format(simulation_settings.get("grid_size"), simulation_settings.get("num_worms"), simulation_settings.get("frame_rate")))
@@ -217,11 +228,14 @@ def main():
     
     # X Positions:
     center_x = menu.screen_height // 2
+    title_button_mid_x = (center_x - (menu.button_width_title // 2))
+    worm_button_mid_x = (center_x - (menu.worm_width_2 // 2))
     main_button_mid_x = (center_x - (menu.button_width_main // 2))
     option_button_d_mid_x = (center_x - (menu.button_width_options_d // 2))
     
-    # Main Button Positions:
-    worm_pos = (main_button_mid_x, (main_button_mid_x - main_button_mid_x * 0.6)) # Top-Top-Center
+    # Main Button Positions (x, y):
+    title_pos = (title_button_mid_x, (main_button_mid_x - main_button_mid_x * 0.75)) # Top-Top-Top-Center
+    worm_pos = (worm_button_mid_x, (main_button_mid_x - main_button_mid_x * 0.6)) # Bottom-Center
     pos_1 = (main_button_mid_x, (main_button_mid_x - main_button_mid_x * 0.4)) # Top-Center
     pos_2 = (main_button_mid_x, (main_button_mid_x - main_button_mid_x * 0.2)) # Upper-Center
     pos_3 = (main_button_mid_x, main_button_mid_x) # Middle-Center
@@ -261,6 +275,7 @@ def main():
     
     # Partial functions with pre-defined arguments
     start_game_partial = partial(start_game, simulation_settings)
+    game_greeting_partial = partial(welcome_to_game)
     worm_greeting_partial = partial(worm_says_hi)
     
     # Functions to update game variables
@@ -279,12 +294,15 @@ def main():
     
     # Define Buttons:
     
+    # Title Button:
+    title_button = Button(menu, title_pos, "assets/pw-title-v2.png", menu.button_width_title, menu.button_height_title, "title", game_greeting_partial)
+    
     # Main Menu Buttons:
     start_button = Button(menu, pos_2, "assets/start-button.png", menu.button_width_main, menu.button_height_main, "start", start_game_partial)
     exit_button = Button(menu, pos_4, "assets/exit-button.png", menu.button_width_main, menu.button_height_main, "exit", lambda: exit_menu(False))
     options_button = Button(menu, pos_1, "assets/options-button.png", menu.button_width_main, menu.button_height_main, "options", lambda: update_menu_state("sub"))
     about_button = Button(menu, pos_3, "assets/about-button.png", menu.button_width_main, menu.button_height_main, "about", lambda: update_menu_state("about"))
-    worm_button = Button(menu, worm_pos, "assets/worm-v4.png", menu.worm_width_2, menu.worm_height_2, "worm_greeting", worm_greeting_partial)
+    worm_button = Button(menu, worm_pos, "assets/worm-v4.png", menu.worm_height_2, menu.worm_width_2, "worm_greeting", worm_greeting_partial)
     
     # Sub-Menu Buttons:
     main_back_button = Button(menu, pos_1, "assets/back-button.png", menu.button_width_main, menu.button_height_main, "back", lambda: update_menu_state("main"))
@@ -335,11 +353,12 @@ def main():
     
     # Create Button Dictionaries:
     main_menu_buttons = {
+        "title_button": title_button,
         "start_button": start_button,
         "exit_button": exit_button,
         "options_button": options_button,
-        "about_button": about_button,
-        "worm_button": worm_button
+        "about_button": about_button
+        # "worm_button": worm_button
     }
     
     sub_menu_buttons = {
@@ -477,21 +496,30 @@ def main():
                 
             # Display About - History Section:
             elif simulation_settings.get("menu_state") == "about-history":
+                # Draw buttons
+                for button in about_history_section_buttons.items():
+                    button[1].draw()
                 
                 # Draw about section text
-                scroll_y = menu.draw_text(menu.about_history_section, y_position, scroll_y)
+                scroll_y = menu.draw_text(y_position, scroll_y, menu.about_history_section)
             
             # Display About - Rules Section:
             elif simulation_settings.get("menu_state") == "about-rules":
+                # Draw buttons
+                for button in about_rules_section_buttons.items():
+                    button[1].draw()
                 
                 # Draw about section text
-                scroll_y = menu.draw_text(menu.about_rules_section, y_position, scroll_y)
+                scroll_y = menu.draw_text(y_position, scroll_y, menu.about_rules_section)
             
             # Display About - Algorithm Section:
             elif simulation_settings.get("menu_state") == "about-algorithm":
+                # Draw buttons
+                for button in about_algorithm_section_buttons.items():
+                    button[1].draw()
                 
                 # Draw about section text
-                scroll_y = menu.draw_text(menu.about_algorithm_section, y_position, scroll_y)
+                scroll_y = menu.draw_text(y_position, scroll_y, menu.about_algorithm_section)
         
         # Event handler
         for event in pg.event.get():
@@ -529,12 +557,11 @@ def main():
                     elif simulation_settings.get("menu_state") == "about-algorithm":
                         handle_button_click(about_algorithm_section_buttons, click_position)
             
+            # Scroll text up/down
             elif event.type == pg.MOUSEBUTTONDOWN and event.button == 4: # Scroll up
-                print("Scrolling up...")
                 scroll_y += 10
             
             elif event.type == pg.MOUSEBUTTONDOWN and event.button == 5: # Scroll down
-                print("Scrolling down...")
                 scroll_y -= 10
         
         # Limit menu frame rate
